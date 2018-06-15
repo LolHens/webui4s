@@ -22,5 +22,3 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.5.0")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-web-scalajs-bundler" % "0.12.0")
-
-addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.0.6")

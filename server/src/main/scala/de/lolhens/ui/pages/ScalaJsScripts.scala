@@ -6,68 +6,77 @@ import scalatags.Text.all._
   * Created by u016595 on 14.12.2016.
   */
 object ScalaJsScripts {
-  def page(name: String, assets: String => String): String = html (
+  private val defaultResourceExists = resourceExists("")
+
+  def resourceExists(resourcePath: String): String => Boolean = { resource =>
+    val resourcePrefix = "/" + resourcePath.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse
+    Option(getClass.getResource(resourcePrefix + "/" + resource)).isDefined
+  }
+
+  def page(projectName: String,
+           route: String => String,
+           exists: String => Boolean = defaultResourceExists): String = html(
     head(
-      apply(name, assets)
+      tags(projectName, route, exists)
     )
   ).render
 
-  def apply(name: String, assets: String => String): Seq[Tag] =
+  private def jsScriptTag(source: String): Tag = script(src := source, `type` := "text/javascript")
+
+  def tags(projectName: String,
+           route: String => String,
+           exists: String => Boolean = defaultResourceExists): Seq[Tag] =
+    assets(projectName, route, exists)
+      .map(jsScriptTag)
+
+  def assets(projectName: String,
+             route: String => String,
+             exists: String => Boolean = defaultResourceExists): Seq[String] =
     scripts(
-      name,
-      assets,
-      name => Option(getClass.getResource(s"/public/$name")).isDefined
+      projectName,
+      resource => exists(s"/$resource")
     )
+      .map(name => route(name))
 
-  private def jsScript(source: String): Tag = script(src := source, `type` := "text/javascript")
-
-  private def scripts(projectName: String,
-                      assets: String => String,
-                      resourceExists: String => Boolean): Seq[Tag] =
-    selectJsDeps(projectName, assets, resourceExists).toSeq ++
-      selectLibrary(projectName, assets, resourceExists).toSeq ++
-      selectLoader(projectName, assets, resourceExists).toSeq ++
-      selectScript(projectName, assets, resourceExists).toSeq
+  def scripts(projectName: String,
+              exists: String => Boolean = defaultResourceExists): Seq[String] =
+    selectJsDeps(projectName, exists).toSeq ++
+      selectLibrary(projectName, exists).toSeq ++
+      selectLoader(projectName, exists).toSeq ++
+      selectScript(projectName, exists).toSeq
 
   private def selectLibrary(projectName: String,
-                            assets: String => String,
-                            resourceExists: String => Boolean): Option[Tag] = {
+                            exists: String => Boolean): Option[String] = {
     val name = projectName.toLowerCase
     Seq(
       s"$name-opt-library.js",
       s"$name-fastopt-library.js"
     )
-      .find(resourceExists)
-      .map(name => jsScript(assets(name)))
+      .find(exists)
   }
 
   private def selectJsDeps(projectName: String,
-                           assets: String => String,
-                           resourceExists: String => Boolean): Option[Tag] = {
+                           exists: String => Boolean): Option[String] = {
     val name = projectName.toLowerCase
     Seq(
       s"$name-jsdeps.min.js",
       s"$name-jsdeps.js"
     )
-      .find(resourceExists)
-      .map(name => jsScript(assets(name)))
+      .find(exists)
   }
 
   private def selectLoader(projectName: String,
-                           assets: String => String,
-                           resourceExists: String => Boolean): Option[Tag] = {
+                           exists: String => Boolean): Option[String] = {
     val name = projectName.toLowerCase
     Seq(
       s"$name-opt-loader.js",
       s"$name-fastopt-loader.js"
     )
-      .find(resourceExists)
-      .map(name => jsScript(assets(name)))
+      .find(exists)
   }
 
   private def selectScript(projectName: String,
-                           assets: String => String,
-                           resourceExists: String => Boolean): Option[Tag] = {
+                           exists: String => Boolean): Option[String] = {
     val name = projectName.toLowerCase
     Seq(
       s"$name-opt.js",
@@ -75,7 +84,6 @@ object ScalaJsScripts {
       s"$name-opt-bundle.js",
       s"$name-fastopt-bundle.js"
     )
-      .find(resourceExists)
-      .map(name => jsScript(assets(name)))
+      .find(exists)
   }
 }

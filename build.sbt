@@ -12,24 +12,83 @@ inThisBuild(Seq(
   scalacOptions ++= Seq("-Xmax-classfile-name", "127")
 ))
 
-name := (name in ThisBuild).value
+name := (ThisBuild / name).value
 
 lazy val compilerPlugins = Seq(
   addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
 )
 
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+
+lazy val shared = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure).in(file("shared"))
+  .settings(compilerPlugins)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.monix" %%% "monix" % "3.0.0-RC1",
+      "com.lihaoyi" %%% "scalatags" % "0.6.7",
+      "io.circe" %%% "circe-core" % "0.9.3",
+      "io.circe" %%% "circe-generic" % "0.9.3",
+      "io.circe" %%% "circe-parser" % "0.9.3"
+    )
+  )
+
+lazy val sharedJs = shared.js
+lazy val sharedJvm = shared.jvm
 
 lazy val server = project.in(file("server"))
   .settings(
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.http4s" %% "http4s-dsl" % "0.18.12",
-      "org.http4s" %% "http4s-blaze-server" % "0.18.12",
-      "io.monix" %%% "monix" % "3.0.0-RC1",
-      "com.lihaoyi" %%% "scalatags" % "0.6.7"
+      "org.http4s" %% "http4s-blaze-server" % "0.18.12"
     ),
 
-    scalacOptions ++= Seq("-Ypartial-unification")
+    scalacOptions ++= Seq("-Ypartial-unification"),
+
+    Compile / managedResources ++= (client / scalaJS).value,
+    watchSources ++= (client / watchSources).value,
   )
+  .dependsOn(sharedJvm)
+
+val scalaJS = taskKey[Seq[File]]("ScalaJS output files")
+val isDevMode = taskKey[Boolean]("Whether the app runs in development mode")
+
+lazy val client = project.in(file("client"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    scalaJSUseMainModuleInitializer := true,
+
+    skip in packageJSDependencies := false,
+    Compile / packageJSDependencies / crossTarget := (Compile / resourceManaged).value,
+
+    fastOptJS / scalaJS := Seq(
+      (Compile / fastOptJS).value.data,
+      (Compile / fastOptJS).value.map(file => new File(file.toString + ".map")).data,
+      (Compile / packageJSDependencies).value
+    ),
+
+    fullOptJS / scalaJS := Seq(
+      (Compile / fullOptJS).value.data,
+      (Compile / fullOptJS).value.map(file => new File(file.toString + ".map")).data,
+      (Compile / packageMinifiedJSDependencies).value
+    ),
+
+    isDevMode := {
+      val devCommands = Seq("run", "compile", "re-start", "reStart", "runAll")
+      val executedCommandKey =
+        state.value.history.currentOption
+          .flatMap(_.commandLine.takeWhile(c => !c.isWhitespace).split(Array('/', ':')).lastOption)
+          .getOrElse("")
+      devCommands.contains(executedCommandKey)
+    },
+
+    scalaJS := Def.taskDyn {
+      if (isDevMode.value)
+        fastOptJS / scalaJS
+      else
+        fullOptJS / scalaJS
+    }.value
+  )
+  .dependsOn(sharedJs)
+

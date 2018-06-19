@@ -1,5 +1,6 @@
-package de.lolhens.ui.pages
+package de.lolhens.webserver
 
+import scalatags.Text.TypedTag
 import scalatags.Text.all._
 
 /**
@@ -18,11 +19,11 @@ object ScalaJsScripts {
 
   def page(projectName: String,
            route: String => String,
-           exists: String => Boolean = defaultResourceExists): String = html(
+           exists: String => Boolean = defaultResourceExists): TypedTag[String] = html(
     head(
       tags(projectName, route, exists)
     )
-  ).render
+  )
 
   private def jsScriptTag(source: String): Tag = script(src := source, `type` := "text/javascript")
 

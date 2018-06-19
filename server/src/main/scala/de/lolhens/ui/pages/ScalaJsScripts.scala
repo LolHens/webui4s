@@ -6,11 +6,14 @@ import scalatags.Text.all._
   * Created by u016595 on 14.12.2016.
   */
 object ScalaJsScripts {
-  private val defaultResourceExists = resourceExists("")
+  private val defaultResourceExists = resourceExistsInClasspath("")
 
-  def resourceExists(resourcePath: String): String => Boolean = { resource =>
-    val resourcePrefix = "/" + resourcePath.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse
-    Option(getClass.getResource(resourcePrefix + "/" + resource)).isDefined
+  def resourceExistsInClasspath(resourcePath: String): String => Boolean = { resource =>
+    val cleanResourcePath = resourcePath.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse match {
+      case "" =>
+      case e => s"$e/"
+    }
+    Option(getClass.getResource("/" + cleanResourcePath + resource)).isDefined
   }
 
   def page(projectName: String,
@@ -34,7 +37,7 @@ object ScalaJsScripts {
              exists: String => Boolean = defaultResourceExists): Seq[String] =
     scripts(
       projectName,
-      resource => exists(s"/$resource")
+      exists
     )
       .map(name => route(name))
 

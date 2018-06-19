@@ -6,10 +6,11 @@ import org.http4s.dsl.task._
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 
 abstract class WebServer {
-  def services: Seq[(String, Service)]
+  def services: ListMap[String, Service]
 
   def start(port: Int, host: String): Task[(Server[Task], Task[Unit])] =
     for {

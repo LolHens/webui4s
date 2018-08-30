@@ -7,7 +7,7 @@ import scalatags.Text.all._
   * Created by u016595 on 14.12.2016.
   */
 object ScalaJsScripts {
-  private val defaultResourceExists = resourceExistsInClasspath("")
+  val defaultResourceExists: String => Boolean = resourceExistsInClasspath("")
 
   def resourceExistsInClasspath(resourcePath: String): String => Boolean = { resource =>
     val cleanResourcePath = resourcePath.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse match {
@@ -19,8 +19,10 @@ object ScalaJsScripts {
 
   def page(projectName: String,
            route: String => String,
-           exists: String => Boolean = defaultResourceExists): TypedTag[String] = html(
+           exists: String => Boolean = defaultResourceExists,
+           headers: Modifier = ""): TypedTag[String] = html(
     head(
+      headers,
       tags(projectName, route, exists)
     )
   )

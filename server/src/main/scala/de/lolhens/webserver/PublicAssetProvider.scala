@@ -1,5 +1,6 @@
 package de.lolhens.webserver
 
+import de.lolhens.http4s.assets.{WebJar, WebJars}
 import monix.eval.{MVar, Task}
 import monix.reactive.Observable
 import org.http4s.dsl.task._
@@ -9,12 +10,18 @@ import scala.collection.immutable.ListMap
 import scala.ref.SoftReference
 
 trait PublicAssetProvider extends WebServer {
+  val jars = WebJars(
+    WebJar("bootstrap", "4.1.3"),
+    WebJar("jquery", "3.0.0"),
+    WebJar("popper.js", "1.14.3")
+  )
+
   lazy val publicAssetService: Service = {
     val cacheTask = MVar[Map[String, SoftReference[Array[Byte]]]](Map.empty).memoize
 
     HttpService {
       case GET -> httpPath =>
-        val responseOption = for {
+        def responseOption = for {
           path <- Some(httpPath.toString).filter(_.nonEmpty)
           filePath = s"/public$path"
           fileExtension <- Some(filePath.lastIndexOf(".")).filter(_ >= 0).map(i => filePath.drop(i + 1))
@@ -35,10 +42,16 @@ trait PublicAssetProvider extends WebServer {
         } yield
           Ok.apply(bytesTask).withType(mediaType)
 
-        responseOption getOrElse NotFound()
+        def webJar =
+          jars.asset(httpPath.toString).map(asset => Ok(asset.bytesTask).withType(asset.mediaType))
+
+        println(httpPath.toString)
+
+        webJar orElse responseOption getOrElse NotFound()
     }
   }
 
-  def services: ListMap[String, Service] =
-    ListMap("/public" -> publicAssetService)
+  def service: (String, Service) = "/public" -> publicAssetService
+
+  def services: ListMap[String, Service] = ListMap(service)
 }

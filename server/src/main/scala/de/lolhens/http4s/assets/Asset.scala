@@ -25,9 +25,9 @@ trait Asset {
 object Asset {
   def fromClasspath(path: String): Option[Asset] =
     Option(getClass.getResourceAsStream(path))
-      .map(Asset.fromInputStream(path.split("\\\\|/").last, _))
+      .map(_ => Asset.fromInputStream(path.split("/").last, getClass.getResourceAsStream(path)))
 
-  def fromInputStream(name: String, stream: InputStream): Asset = new Asset {
+  def fromInputStream(name: String, stream: => InputStream): Asset = new Asset {
     override def fileName: String = name
 
     override def inputStream: InputStream = stream

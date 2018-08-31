@@ -5,14 +5,14 @@ import monix.execution.atomic.Atomic
 case class WebJars(webJars: WebJar*) extends AssetProvider {
   private val cache: Atomic[Map[String, WebJar]] = Atomic(Map.empty[String, WebJar])
 
-  private def search(fileName: String): Option[WebJar] = webJars.find(_.exists(fileName))
+  private def search(file: String): Option[WebJar] = webJars.find(_.exists(file))
 
-  override def asset(fileName: String): Option[Asset] =
+  override def asset(file: String): Option[Asset] =
     cache.get
-      .get(fileName)
-      .orElse(search(fileName).map { webJar =>
-        cache.transform(_ + (fileName -> webJar))
+      .get(file)
+      .orElse(search(file).map { webJar =>
+        cache.transform(_ + (file -> webJar))
         webJar
       })
-      .flatMap(_.asset(fileName))
+      .flatMap(_.asset(file))
 }

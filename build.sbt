@@ -46,7 +46,7 @@ def copyResourcesTask(resources: Seq[File], dir: String) =
     import sbt.io.Path.flat
     val mappings = resources pair flat(t)
     s.log.debug("Copy resource mappings: " + mappings.mkString("\n\t", "\n\t", ""))
-    Sync(cacheStore)(mappings)
+    Sync.sync(cacheStore)(mappings)
     mappings
   }
 
@@ -61,21 +61,29 @@ lazy val server = project.in(file("server"))
 
     scalacOptions ++= Seq("-Ypartial-unification"),
 
-    inConfig(Compile)(Seq(
+    /*inConfig(Compile)(Seq(
       publicResources := Seq.empty,
-      resources := resources.dependsOn(Def.taskDyn{
+      resources := resources.dependsOn(Def.taskDyn {
         copyResourcesTask(publicResources.value, "public")
       }).value
-    )),
+    )),*/
 
-    Compile / publicResources ++= (client / scalaJS).value,
+    //Compile / publicResources ++= (client / scalaJS).value,
 
-    watchSources ++= (client / watchSources).value,
+    //watchSources ++= (client / watchSources).value,
   )
   .dependsOn(sharedJvm)
+  .dependsOn(webjar(client))
 
 val scalaJS = taskKey[Seq[File]]("ScalaJS output files")
 val isDevMode = taskKey[Boolean]("Whether the app runs in development mode")
+
+val packageWebjar = taskKey[File]("Produces a webjar.")
+
+
+def webjar(project: Project): Project = project.settings(
+  exportedProducts := Seq(Attributed.blank(packageWebjar.value))
+)
 
 lazy val client = project.in(file("client"))
   .enablePlugins(ScalaJSPlugin)
@@ -111,7 +119,24 @@ lazy val client = project.in(file("client"))
         fastOptJS / scalaJS
       else
         fullOptJS / scalaJS
-    }.value
+    }.value,
+
+    packageWebjar / artifact := {
+      val artifactValue = (packageWebjar / artifact).value
+      artifactValue.withName(artifactValue.name + "-webjar")
+    },
+    Defaults.packageTaskSettings(packageWebjar, Def.task {
+      def files = (fastOptJS / scalaJS).value
+
+      def n = name.value
+
+      def v = version.value
+
+      files.map { file =>
+        val fileName = file.name
+        file -> s"META-INF/resources/webjars/$n/$v/js/$fileName"
+      }
+    })
   )
   .dependsOn(sharedJs)
 

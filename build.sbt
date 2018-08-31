@@ -55,17 +55,20 @@ lazy val server = project.in(file("server"))
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.http4s" %% "http4s-dsl" % "0.18.12",
-      "org.http4s" %% "http4s-blaze-server" % "0.18.12"
+      "org.http4s" %% "http4s-blaze-server" % "0.18.12",
+      "org.webjars" % "bootstrap" % "4.1.3"
     ),
 
     scalacOptions ++= Seq("-Ypartial-unification"),
 
     inConfig(Compile)(Seq(
       publicResources := Seq.empty,
-      resources := resources.dependsOn(copyResourcesTask(publicResources.value, "public")).value
+      resources := resources.dependsOn(Def.taskDyn{
+        copyResourcesTask(publicResources.value, "public")
+      }).value
     )),
 
-    Compile / publicResources += (client / scalaJS).value,
+    Compile / publicResources ++= (client / scalaJS).value,
 
     watchSources ++= (client / watchSources).value,
   )

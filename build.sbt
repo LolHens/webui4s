@@ -73,17 +73,29 @@ lazy val server = project.in(file("server"))
     //watchSources ++= (client / watchSources).value,
   )
   .dependsOn(sharedJvm)
-  .dependsOn(webjar(client))
+  .dependsOn(clientWebjar)
 
 val scalaJS = taskKey[Seq[File]]("ScalaJS output files")
 val isDevMode = taskKey[Boolean]("Whether the app runs in development mode")
 
 val packageWebjar = taskKey[File]("Produces a webjar.")
 
+val teststuff = taskKey[String]("test")
 
 def webjar(project: Project): Project = project.settings(
-  exportedProducts := Seq(Attributed.blank(packageWebjar.value))
+  //exportJars := true,
+  /*packageBin / artifact := {
+    val e = (packageBin / artifact).value
+    println(e)
+    e
+  }*/
+  //packageBin / artifactName := (packageBin / artifactName).value
+  //packageBin := packageWebjar.value
+  //Compile / exportedProductJars := Seq(Attributed.blank(packageWebjar.value)),
+  //Compile / exportedProductJarsNoTracking := Seq(Attributed.blank(packageWebjar.value))
 )
+
+lazy val clientWebjar = webjar(client)
 
 lazy val client = project.in(file("client"))
   .enablePlugins(ScalaJSPlugin)
@@ -125,6 +137,12 @@ lazy val client = project.in(file("client"))
       val artifactValue = (packageWebjar / artifact).value
       artifactValue.withName(artifactValue.name + "-webjar")
     },
+
+    /*packageBin / artifact := {
+      val artifactValue = (packageWebjar / artifact).value
+      artifactValue.withName(artifactValue.name + "-webjar")
+    },*/
+
     Defaults.packageTaskSettings(packageWebjar, Def.task {
       def files = (fastOptJS / scalaJS).value
 
@@ -132,11 +150,20 @@ lazy val client = project.in(file("client"))
 
       def v = version.value
 
+      println("PACKAGING !!!!")
+
       files.map { file =>
         val fileName = file.name
         file -> s"META-INF/resources/webjars/$n/$v/js/$fileName"
       }
-    })
+    }),
+    exportedProducts := {
+      val e = (Compile/packageBin).value
+      Seq(Attributed.blank(e))
+    },
+    //Compile / exportJars := true,
+    //Compile / exportedProductJars := Seq(Attributed.blank(packageWebjar.value)),
+    //Compile / exportedProductJarsNoTracking := Seq(Attributed.blank(packageWebjar.value))
+    exportJars := true,
   )
   .dependsOn(sharedJs)
-

@@ -12,11 +12,11 @@ case class WebJar(name: String, version: String) extends AssetProvider {
 }
 
 object WebJar {
-  def main(args: Array[String]): Unit = {
+  /*def main(args: Array[String]): Unit = {
     import monix.execution.Scheduler.Implicits.global
     val jars = WebJars(WebJar("bootstrap", "4.1.3"))
     val bytes = jars.asset("js/bootstrap.js").get.bytesTask
       .runSyncUnsafe(Duration.Inf)
     println(new String(bytes))
-  }
+  }*/
 }

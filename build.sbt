@@ -36,20 +36,6 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure
 lazy val sharedJs = shared.js
 lazy val sharedJvm = shared.jvm
 
-//val publicResources = taskKey[Seq[File]]("Public resources")
-
-/*def copyResourcesTask(resources: Seq[File], dir: String) =
-  Def.task {
-    val t = classDirectory.value / dir
-    val s = streams.value
-    val cacheStore = s.cacheStoreFactory make "copy-resources"
-    import sbt.io.Path.flat
-    val mappings = resources pair flat(t)
-    s.log.debug("Copy resource mappings: " + mappings.mkString("\n\t", "\n\t", ""))
-    Sync.sync(cacheStore)(mappings)
-    mappings
-  }*/
-
 lazy val server = project.in(file("server"))
   .settings(
     libraryDependencies ++= Seq(
@@ -60,17 +46,6 @@ lazy val server = project.in(file("server"))
     ),
 
     scalacOptions ++= Seq("-Ypartial-unification"),
-
-    /*inConfig(Compile)(Seq(
-      publicResources := Seq.empty,
-      resources := resources.dependsOn(Def.taskDyn {
-        copyResourcesTask(publicResources.value, "public")
-      }).value
-    )),*/
-
-    //Compile / publicResources ++= (client / scalaJS).value,
-
-    //watchSources ++= (client / watchSources).value,
   )
   .dependsOn(sharedJvm)
   .dependsOn(client.webJar)

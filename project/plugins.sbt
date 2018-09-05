@@ -23,4 +23,4 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-web-scalajs-bundler" % "0.12.0")
 
-addSbtPlugin("de.lolhens" % "sbt-scalajs-webjar" % "0.0.3")
+addSbtPlugin("de.lolhens" % "sbt-scalajs-webjar" % "0.0.5")

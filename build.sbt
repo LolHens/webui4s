@@ -36,9 +36,9 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure
 lazy val sharedJs = shared.js
 lazy val sharedJvm = shared.jvm
 
-val publicResources = taskKey[Seq[File]]("Public resources")
+//val publicResources = taskKey[Seq[File]]("Public resources")
 
-def copyResourcesTask(resources: Seq[File], dir: String) =
+/*def copyResourcesTask(resources: Seq[File], dir: String) =
   Def.task {
     val t = classDirectory.value / dir
     val s = streams.value
@@ -48,7 +48,7 @@ def copyResourcesTask(resources: Seq[File], dir: String) =
     s.log.debug("Copy resource mappings: " + mappings.mkString("\n\t", "\n\t", ""))
     Sync.sync(cacheStore)(mappings)
     mappings
-  }
+  }*/
 
 lazy val server = project.in(file("server"))
   .settings(
@@ -73,96 +73,8 @@ lazy val server = project.in(file("server"))
     //watchSources ++= (client / watchSources).value,
   )
   .dependsOn(sharedJvm)
-  .dependsOn(clientWebjar)
-
-val scalaJS = taskKey[Seq[File]]("ScalaJS output files")
-val isDevMode = taskKey[Boolean]("Whether the app runs in development mode")
-
-val packageWebjar = taskKey[File]("Produces a webjar.")
-
-lazy val clientWebjar = webjar(client)
-
-def webjar(project: Project): Project = project.settings(
-  exportJars := true,
-
-  Compile / exportedProductJars := {
-    val data = (Compile / packageWebjar).value
-    val attributed = Attributed.blank(data)
-      .put(artifact.key, (packageWebjar / artifact).value)
-
-    Seq(attributed)
-  }
-)
-
-def log[T](task: TaskKey[T])(f: T => String) = {
-  task := {
-    val e = task.value
-    println(f(e))
-    e
-  }
-}
+  .dependsOn(client.webJar)
 
 lazy val client = project.in(file("client"))
-  .enablePlugins(ScalaJSPlugin)
-  .settings(
-    scalaJSUseMainModuleInitializer := true,
-
-    skip in packageJSDependencies := false,
-    Compile / packageJSDependencies / crossTarget := (Compile / resourceManaged).value,
-
-    fastOptJS / scalaJS := Seq(
-      (Compile / fastOptJS).value.data,
-      (Compile / fastOptJS).value.map(file => new File(file.toString + ".map")).data,
-      (Compile / packageJSDependencies).value
-    ),
-
-    fullOptJS / scalaJS := Seq(
-      (Compile / fullOptJS).value.data,
-      (Compile / fullOptJS).value.map(file => new File(file.toString + ".map")).data,
-      (Compile / packageMinifiedJSDependencies).value
-    ),
-
-    isDevMode := {
-      val devCommands = Seq("run", "compile", "re-start", "reStart", "runAll")
-      val executedCommandKey =
-        state.value.history.currentOption
-          .flatMap(_.commandLine.takeWhile(c => !c.isWhitespace).split(Array('/', ':')).lastOption)
-          .getOrElse("")
-      devCommands.contains(executedCommandKey)
-    },
-
-    scalaJS := Def.taskDyn {
-      if (isDevMode.value)
-        fastOptJS / scalaJS
-      else
-        fullOptJS / scalaJS
-    }.value,
-
-    packageWebjar / artifact := {
-      val artifactValue = (packageWebjar / artifact).value
-      artifactValue.withName(artifactValue.name + "-webjar")
-    },
-
-    Defaults.packageTaskSettings(Compile / packageWebjar, Def.task {
-      def files = (fastOptJS / scalaJS).value
-
-      def artifactName = name.value
-
-      def artifactVersion = version.value
-
-      files.map { file =>
-        file -> s"META-INF/resources/webjars/$artifactName/$artifactVersion/js/${file.name}"
-      }
-    }),
-
-    exportJars := true,
-
-    Compile / exportedProductJars := {
-      val data = (Compile / packageWebjar).value
-      val attributed = Attributed.blank(data)
-        .put(artifact.key, (packageWebjar / artifact).value)
-
-      Seq(attributed)
-    }
-  )
+  .enablePlugins(ScalaJSWebJarPlugin)
   .dependsOn(sharedJs)

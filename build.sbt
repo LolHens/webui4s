@@ -80,22 +80,27 @@ val isDevMode = taskKey[Boolean]("Whether the app runs in development mode")
 
 val packageWebjar = taskKey[File]("Produces a webjar.")
 
-val teststuff = taskKey[String]("test")
+lazy val clientWebjar = webjar(client)
 
 def webjar(project: Project): Project = project.settings(
-  //exportJars := true,
-  /*packageBin / artifact := {
-    val e = (packageBin / artifact).value
-    println(e)
-    e
-  }*/
-  //packageBin / artifactName := (packageBin / artifactName).value
-  //packageBin := packageWebjar.value
-  //Compile / exportedProductJars := Seq(Attributed.blank(packageWebjar.value)),
-  //Compile / exportedProductJarsNoTracking := Seq(Attributed.blank(packageWebjar.value))
+  exportJars := true,
+
+  Compile / exportedProductJars := {
+    val data = (Compile / packageWebjar).value
+    val attributed = Attributed.blank(data)
+      .put(artifact.key, (packageWebjar / artifact).value)
+
+    Seq(attributed)
+  }
 )
 
-lazy val clientWebjar = webjar(client)
+def log[T](task: TaskKey[T])(f: T => String) = {
+  task := {
+    val e = task.value
+    println(f(e))
+    e
+  }
+}
 
 lazy val client = project.in(file("client"))
   .enablePlugins(ScalaJSPlugin)
@@ -138,32 +143,26 @@ lazy val client = project.in(file("client"))
       artifactValue.withName(artifactValue.name + "-webjar")
     },
 
-    /*packageBin / artifact := {
-      val artifactValue = (packageWebjar / artifact).value
-      artifactValue.withName(artifactValue.name + "-webjar")
-    },*/
-
-    Defaults.packageTaskSettings(packageWebjar, Def.task {
+    Defaults.packageTaskSettings(Compile / packageWebjar, Def.task {
       def files = (fastOptJS / scalaJS).value
 
-      def n = name.value
+      def artifactName = name.value
 
-      def v = version.value
-
-      println("PACKAGING !!!!")
+      def artifactVersion = version.value
 
       files.map { file =>
-        val fileName = file.name
-        file -> s"META-INF/resources/webjars/$n/$v/js/$fileName"
+        file -> s"META-INF/resources/webjars/$artifactName/$artifactVersion/js/${file.name}"
       }
     }),
-    exportedProducts := {
-      val e = (Compile/packageBin).value
-      Seq(Attributed.blank(e))
-    },
-    //Compile / exportJars := true,
-    //Compile / exportedProductJars := Seq(Attributed.blank(packageWebjar.value)),
-    //Compile / exportedProductJarsNoTracking := Seq(Attributed.blank(packageWebjar.value))
+
     exportJars := true,
+
+    Compile / exportedProductJars := {
+      val data = (Compile / packageWebjar).value
+      val attributed = Attributed.blank(data)
+        .put(artifact.key, (packageWebjar / artifact).value)
+
+      Seq(attributed)
+    }
   )
   .dependsOn(sharedJs)

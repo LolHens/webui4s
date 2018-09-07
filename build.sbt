@@ -40,16 +40,16 @@ lazy val server = project.in(file("server"))
   .settings(
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "org.http4s" %% "http4s-dsl" % "0.18.12",
-      "org.http4s" %% "http4s-blaze-server" % "0.18.12",
+      "org.http4s" %% "http4s-dsl" % "0.18.17",
+      "org.http4s" %% "http4s-blaze-server" % "0.18.17",
       "org.webjars" % "bootstrap" % "4.1.3"
     ),
 
-    scalacOptions ++= Seq("-Ypartial-unification"),
+    scalacOptions ++= Seq("-Ypartial-unification")
   )
   .dependsOn(sharedJvm)
-  .dependsOn(client.webJar)
+  .dependsOn(client.webjar)
 
 lazy val client = project.in(file("client"))
-  .enablePlugins(ScalaJSWebJarPlugin)
+  .enablePlugins(ScalaJSWebjarPlugin)
   .dependsOn(sharedJs)

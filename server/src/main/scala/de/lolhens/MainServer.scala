@@ -1,7 +1,7 @@
 package de.lolhens
 
 import de.lolhens.http4s.assets.{AssetProvider, WebJar}
-import de.lolhens.webserver.{PublicAssetProvider, ScalaJsScripts, WebServer}
+import de.lolhens.webserver.{ScalaJsScripts, WebServer}
 import monix.execution.Scheduler
 import org.http4s.HttpService
 import org.http4s.dsl.task._
@@ -37,13 +37,13 @@ object MainServer extends WebServer {
   def explorer: Service = HttpService {
     case GET -> path =>
       //Ok(Explorer.show(path.toList))
-    Ok(
-      html(
-        head(
-          link(rel := "stylesheet", href := "/public/js/bootstrap.js")
+      Ok(
+        html(
+          head(
+            link(rel := "stylesheet", href := "/public/js/bootstrap.js")
+          )
         )
       )
-    )
   }
 
   override def services: ListMap[String, Service] = ListMap(

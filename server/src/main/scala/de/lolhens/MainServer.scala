@@ -1,20 +1,37 @@
 package de.lolhens
 
+import de.lolhens.http4s.assets.{AssetProvider, WebJar}
 import de.lolhens.webserver.{PublicAssetProvider, ScalaJsScripts, WebServer}
 import monix.execution.Scheduler
 import org.http4s.HttpService
 import org.http4s.dsl.task._
 import scalatags.Text.all._
+
 import scala.collection.immutable.ListMap
 
-object MainServer extends WebServer with PublicAssetProvider {
-  val scalaJsScripts = ScalaJsScripts("client", ScalaJsScripts.resourceExistsInClasspath("public"))
+object MainServer extends WebServer {
+  val assets: AssetProvider =
+    WebJar("bootstrap", "4.1.3") ++
+      WebJar("client", "0.0.0")
+
+  val scalaJsScripts = ScalaJsScripts("client", e => assets.exists("js/" + e))
 
   lazy val jsService: Service = HttpService {
     case get@GET -> path =>
       val jsPage = scalaJsScripts.page(name => s"/public/$name")
 
       Ok(jsPage)
+  }
+
+  lazy val publicAssetService: Service = HttpService {
+    case get@GET -> path =>
+
+      println(path)
+
+      def webJar =
+        assets.asset("js" + path.toString).map(asset => Ok(asset.bytesTask).withType(asset.mediaType))
+
+      webJar.get
   }
 
   def explorer: Service = HttpService {
@@ -29,13 +46,11 @@ object MainServer extends WebServer with PublicAssetProvider {
     )
   }
 
-  override def services: ListMap[String, Service] = super.services ++ ListMap(
+  override def services: ListMap[String, Service] = ListMap(
     //"/page" -> pageService,
-    new PublicAssetProvider {
-      override def scheduler: Scheduler = Scheduler.global
-    }.service,
     "/logfile" -> explorer,
-    "/" -> jsService
+    "/public" -> publicAssetService,
+    "/" -> jsService,
   )
 
   /*def main(args: Array[String]): Unit = {

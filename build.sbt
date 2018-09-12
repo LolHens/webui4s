@@ -42,6 +42,7 @@ lazy val server = project.in(file("server"))
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.http4s" %% "http4s-dsl" % "0.18.17",
       "org.http4s" %% "http4s-blaze-server" % "0.18.17",
+      "org.http4s" %% "http4s-scalatags" % "0.18.17",
       "org.webjars" % "bootstrap" % "4.1.3"
     ),
 

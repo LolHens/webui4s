@@ -5,6 +5,7 @@ import de.lolhens.webserver.{ScalaJsScripts, WebServer}
 import monix.execution.Scheduler
 import org.http4s.HttpService
 import org.http4s.dsl.task._
+import org.http4s.scalatags._
 import scalatags.Text.all._
 
 import scala.collection.immutable.ListMap

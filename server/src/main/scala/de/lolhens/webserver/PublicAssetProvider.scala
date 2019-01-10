@@ -4,6 +4,7 @@ import de.lolhens.http4s.assets.{WebJar, WebJars}
 import monix.eval.{MVar, Task}
 import monix.reactive.Observable
 import org.http4s.dsl.task._
+import org.http4s.headers.`Content-Type`
 import org.http4s.{HttpService, MediaType}
 
 import scala.collection.immutable.ListMap
@@ -25,14 +26,14 @@ trait PublicAssetProvider extends WebServer {
           path <- Some(httpPath.toString).filter(_.nonEmpty)
           filePath = s"/public$path"
           fileExtension <- Some(filePath.lastIndexOf(".")).filter(_ >= 0).map(i => filePath.drop(i + 1))
-          mediaType = MediaType.forExtension(fileExtension).getOrElse(MediaType.`text/plain`)
+          mediaType = MediaType.forExtension(fileExtension).getOrElse(MediaType.text.plain)
           inputStream <- Option(getClass.getResourceAsStream(filePath))
           bytesTask = for {
             cacheVar <- cacheTask
             cache <- cacheVar.take
             cachedBytesOption = cache.get(path).flatMap(_.get)
             bytes <- cachedBytesOption.map(Task.now).getOrElse {
-              Observable.fromInputStream(inputStream).foldLeftL(Array[Byte]()) { (last, e) =>
+              Observable.fromInputStream(Task.now(inputStream)).foldLeftL(Array[Byte]()) { (last, e) =>
                 last ++ e
               }
             }
@@ -40,10 +41,12 @@ trait PublicAssetProvider extends WebServer {
           } yield
             bytes
         } yield
-          Ok.apply(bytesTask).withType(mediaType)
+          Ok.apply(bytesTask).map(_.withContentType(`Content-Type`(mediaType)))
 
         def webJar =
-          jars.asset(httpPath.toString).map(asset => Ok(asset.bytesTask).withType(asset.mediaType))
+          jars.asset(httpPath.toString).map { asset =>
+            Ok(asset.bytesTask).map(_.withContentType(`Content-Type`(asset.mediaType)))
+          }
 
         println(httpPath.toString)
 

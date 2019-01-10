@@ -4,7 +4,7 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import org.http4s.dsl.task._
 import org.http4s.server.Server
-import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
@@ -12,16 +12,16 @@ import scala.concurrent.duration.Duration
 abstract class WebServer {
   def services: ListMap[String, Service]
 
-  def start(f: BlazeBuilder[Task] => BlazeBuilder[Task]): Task[Server[Task]] =
+  def start(f: BlazeServerBuilder[Task] => BlazeServerBuilder[Task]): Task[Server[Task]] =
     for {
       builder <-
         Task.deferAction { implicit scheduler =>
-          Task.now(BlazeBuilder[Task])
+          Task.now(BlazeServerBuilder[Task])
         }
       server <-
         f(services.foldLeft(builder) { (builder, service) =>
-          builder.mountService(service._2, service._1)
-        }).start
+          builder.withHttpApp().mountService(service._2, service._1)
+        }).resource.allocated
     } yield
       server
 

@@ -15,7 +15,7 @@ trait Asset {
 
   def mediaType: MediaType =
     fileExtension.flatMap(MediaType.forExtension)
-      .getOrElse(MediaType.`text/plain`)
+      .getOrElse(MediaType.text.plain)
 
   def inputStream: InputStream
 
@@ -38,7 +38,7 @@ object Asset {
     override def inputStream: InputStream = stream
 
     override def bytesTask: Task[Array[Byte]] =
-      Observable.fromInputStream(inputStream)
+      Observable.fromInputStream(Task(inputStream))
         .foldLeftL(Array.empty[Byte])((acc, e) => acc ++ e)
   }
 }

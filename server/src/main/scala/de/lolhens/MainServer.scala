@@ -2,9 +2,11 @@ package de.lolhens
 
 import de.lolhens.http4s.assets.{AssetProvider, WebJar}
 import de.lolhens.webserver.{ScalaJsScripts, WebServer}
+import monix.eval.Task
 import monix.execution.Scheduler
-import org.http4s.HttpService
+import org.http4s.HttpRoutes
 import org.http4s.dsl.task._
+import org.http4s.headers.`Content-Type`
 import org.http4s.scalatags._
 import scalatags.Text.all._
 
@@ -17,25 +19,28 @@ object MainServer extends WebServer {
 
   val scalaJsScripts = ScalaJsScripts("client", e => assets.exists("js/" + e))
 
-  lazy val jsService: Service = HttpService {
+  lazy val jsService: HttpRoutes[Task] = HttpRoutes.of[Task] {
     case get@GET -> path =>
       val jsPage = scalaJsScripts.page(name => s"/public/$name")
 
       Ok(jsPage)
   }
 
-  lazy val publicAssetService: Service = HttpService {
+  lazy val publicAssetService: HttpRoutes[Task] = HttpRoutes.of[Task] {
     case get@GET -> path =>
 
       println(path)
 
       def webJar =
-        assets.asset("js" + path.toString).map(asset => Ok(asset.bytesTask).withType(asset.mediaType))
+        assets.asset("js" + path.toString).map { asset =>
+          Ok(asset.bytesTask)
+            .map(_.withContentType(`Content-Type`(asset.mediaType)))
+        }
 
       webJar.get
   }
 
-  def explorer: Service = HttpService {
+  def explorer: HttpRoutes[Task] = HttpRoutes.of[Task] {
     case GET -> path =>
       //Ok(Explorer.show(path.toList))
       Ok(

@@ -25,7 +25,7 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure
   .settings(compilerPlugins)
   .settings(
     libraryDependencies ++= Seq(
-      "io.monix" %%% "monix" % "3.0.0-RC1",
+      "io.monix" %%% "monix" % "3.0.0-RC2",
       "com.lihaoyi" %%% "scalatags" % "0.6.7",
       "io.circe" %%% "circe-core" % "0.9.3",
       "io.circe" %%% "circe-generic" % "0.9.3",
@@ -40,9 +40,9 @@ lazy val server = project.in(file("server"))
   .settings(
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "org.http4s" %% "http4s-dsl" % "0.18.17",
-      "org.http4s" %% "http4s-blaze-server" % "0.18.17",
-      "org.http4s" %% "http4s-scalatags" % "0.18.17",
+      "org.http4s" %% "http4s-dsl" % "0.20.0-M4",
+      "org.http4s" %% "http4s-blaze-server" % "0.20.0-M4",
+      "org.http4s" %% "http4s-scalatags" % "0.20.0-M4",
       "org.webjars" % "bootstrap" % "4.1.3"
     ),
 
